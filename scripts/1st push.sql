@@ -18,6 +18,7 @@ INNER JOIN teams
 USING (teamid)
 GROUP BY player_name, appearances.g_all, teams.name
 ORDER BY shortest_height_feet
-LIMIT 1;
+LIMIT 1
+
 --3
 
