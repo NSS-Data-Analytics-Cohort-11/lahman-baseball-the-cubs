@@ -104,10 +104,50 @@ ORDER BY Decade ASC;
 
 --question 6: Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 
-SELECT *
-FROM batting
+-- SELECT *
+-- FROM batting
+WITH stealing AS (
+				SELECT playerid, sb, cs, sb+cs AS total_attempts 
+				FROM batting
+				WHERE yearid = 2016 
+				AND (sb + cs)>= 20
+				)
+SELECT  CONCAT(namefirst,' ', namelast), sb, cs, total_attempts, ROUND((1.0*sb/total_attempts), 2) AS successful_steals
+FROM stealing
+INNER JOIN people
+USING (playerid)
+ORDER BY (1.0*sb/total_attempts) DESC;
+--answer: Chris Owings, 91%
 
-SELECT playerid, sb, cs, sb/(sb+cs)
-FROM batting
-WHERE yearid = 2016 
-	AND (sb + cs)>= 20
+--question 7:
+-- From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+
+SELECT name, w AS wins, wswin AS world_series_win
+FROM teams
+WHERE yearid >= 1970
+AND wswin = 'N'
+ORDER BY w DESC
+--From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? 116 wins, Seattle Mariners
+
+SELECT name, yearid, w AS wins, wswin AS world_series_win
+FROM teams
+WHERE yearid >= 1970 
+AND wswin = 'Y'
+ORDER BY w;
+--What is the smallest number of wins for a team that did win the world series? 63, LA Dodgers
+--reason: there was a player strike that year (1981)
+
+SELECT name, yearid, w AS wins, wswin AS world_series_win
+FROM teams
+WHERE yearid >= 1970 AND yearid NOT IN (1981)
+AND wswin = 'Y'
+ORDER BY w;
+--What is the smallest number of wins for a team that did win the world series? not including 1981: 83 wins, Cardinals in 2006
+
+SELECT name --MAX(w) AS max_wins, wswin AS world_series_win, yearid
+FROM teams
+WHERE yearid >= 1970
+--AND wswin = 'Y'
+GROUP BY yearid --name, wswin
+ORDER BY yearid
+--going to have to do a subquery to figure out max wins for each year
