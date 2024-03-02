@@ -112,11 +112,12 @@ WITH stealing AS (
 				WHERE yearid = 2016 
 				AND (sb + cs)>= 20
 				)
-SELECT  CONCAT(namefirst,' ', namelast), sb, cs, total_attempts, ROUND((1.0*sb/total_attempts), 2) AS successful_steals
+SELECT  CONCAT(namefirst,' ', namelast), sb, cs, total_attempts, ROUND((100.0*sb/total_attempts), 2) AS successful_steals
 FROM stealing
 INNER JOIN people
 USING (playerid)
-ORDER BY (1.0*sb/total_attempts) DESC;
+ORDER BY (1.0*sb/total_attempts) DESC
+LIMIT 1;
 --answer: Chris Owings, 91%
 
 --question 7:
@@ -225,3 +226,67 @@ FROM top_5_attendance
 UNION ALL
 SELECT *
 FROM bottom_5_attendance
+
+--question 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+WITH NL_winners AS
+(SELECT playerid, awardid, lgid, yearid
+FROM awardsmanagers
+WHERE awardid = 'TSN Manager of the Year' AND lgid = 'NL'
+GROUP BY playerid, awardid, lgid, yearid
+ORDER BY playerid), 
+
+AL_winners AS
+(SELECT playerid, awardid, lgid, yearid
+FROM awardsmanagers
+WHERE awardid = 'TSN Manager of the Year' AND lgid = 'AL'
+GROUP BY playerid, awardid, lgid, yearid
+ORDER BY playerid)
+
+SELECT NL_winners.playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast) AS manager_name, teams.name, yearid
+FROM NL_winners
+INNER JOIN AL_winners
+USING (playerid)
+INNER JOIN people
+USING (playerid)
+INNER JOIN appearances
+USING (playerid)
+INNER JOIN teams
+USING (teamid)
+GROUP BY playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast), teams.name, yearid
+
+--fixing earlier errors
+WITH NL_winners AS
+(SELECT playerid, awardid, lgid, yearid
+FROM awardsmanagers
+WHERE awardid = 'TSN Manager of the Year' AND lgid = 'NL'
+GROUP BY playerid, awardid, lgid, yearid
+ORDER BY playerid), 
+
+AL_winners AS
+(SELECT playerid, awardid, lgid, yearid
+FROM awardsmanagers
+WHERE awardid = 'TSN Manager of the Year' AND lgid = 'AL'
+GROUP BY playerid, awardid, lgid, yearid
+ORDER BY playerid)
+
+SELECT NL_winners.playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, NL_winners.yearid AS NL_win, AL_winners.yearid AS AL_win, CONCAT (namefirst, ' ', namelast) AS name
+FROM NL_winners
+INNER JOIN AL_winners
+USING (playerid)
+INNER JOIN people
+USING (playerid)
+
+--finding team names associated w/those managers
+SELECT people.playerid, teams.teamid, teams.name, teams.yearid
+FROM people
+INNER JOIN appearances
+USING (playerid)
+INNER JOIN teams
+USING (teamid)
+WHERE playerid IN ('johnsda02', 'leylaji99')
+GROUP BY playerid, teams.teamid, teams.name, teams.yearid
+ORDER BY yearid
+
+
+SELECT *
+from people
