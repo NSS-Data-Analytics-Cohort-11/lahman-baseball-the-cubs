@@ -103,20 +103,209 @@ WITH players_base_stats_2016 AS (
 								AND sb+cs >= 20
 							GROUP BY playerid, yearid
 							)
-SELECT concat(namefirst,' ',namelast) AS player_name, ROUND((stolen_bases*1.0)/(stolen_bases+caught_stealing),2) AS perc_stolen_bases
+SELECT concat(namefirst,' ',namelast) AS player_name, ROUND(((stolen_bases*1.0)/(stolen_bases+caught_stealing))*100,2) AS perc_stolen_bases
 FROM players_base_stats_2016
 INNER JOIN people
 USING(playerid)
-ORDER BY ROUND((stolen_bases*1.0)/(stolen_bases+caught_stealing),2) DESC;
+ORDER BY ROUND(((stolen_bases*1.0)/(stolen_bases+caught_stealing))*100,2) DESC;
 
 
 	
 
 --Q7.) From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
-SELECT name, yearid, w, wswin
-FROM teams
-WHERE yearid BETWEEN 1970 AND 2016
+/*WITH max_num_wins_lost_WS AS (
+							SELECT name, yearid, w AS wins, wswin
+							FROM teams
+							WHERE yearid BETWEEN 1970 AND 2016
+							AND wswin = 'N'
+							ORDER BY w DESC
+							--LIMIT 1
+							---seattle mariners
+						),
+	min_num_wins_won_WS AS (
+							SELECT name, yearid, w AS wins, wswin
+							FROM teams
+							WHERE yearid BETWEEN 1970 AND 2016
+							AND wswin = 'Y'
+							ORDER BY w ASC
+							--LIMIT 1
+							---LA Dodgers
+							)
+SELECT *
+FROM max_num_wins_lost_WS
+UNION ALL
+SELECT *
+FROM min_num_wins_won_WS*/
 
 
 
 
+--answer
+WITH most_wins AS (
+				SELECT yearid, MAX(w) AS w
+				FROM teams
+				WHERE yearid>=1970
+				GROUP BY yearid
+				ORDER BY yearid
+				),
+most_win_teams AS (
+					SELECT yearid, name, wswin
+					FROM teams
+					INNER JOIN most_wins
+					USING (yearid,w)
+					)
+SELECT 
+	(SELECT COUNT(*)
+	FROM most_win_teams
+	WHERE wswin = 'Y'
+	) * 100.0 /
+	(SELECT COUNT(*)
+	FROM most_win_teams
+	);
+
+
+--Q8.)Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
+SELECT park_name,
+homegames.attendance,
+name,
+games,
+homegames.attendance / games AS attendance_per_game
+FROM homegames
+INNER JOIN parks
+USING(park)
+INNER JOIN teams
+ON team=teamid AND year=yearid
+WHERE year=2016 AND games>=10
+ORDER BY attendance_per_game DESC
+LIMIT 5;
+
+
+
+--My queries
+WITH top_avg_games AS (
+					SELECT team, park, attendance, games, year
+					FROM homegames
+					WHERE year = 2016 
+						AND games >= 10 
+					ORDER BY attendance DESC
+					)
+SELECT team, park_name, attendance/games AS attendance_per_games
+FROM top_avg_games
+INNER JOIN parks
+USING(park)
+ORDER BY attendance_per_games DESC
+LIMIT 5;
+
+
+
+WITH low_avg_games AS (
+					SELECT team, park, attendance, games, year
+					FROM homegames
+					WHERE year = 2016 
+						AND games >= 10 
+					ORDER BY attendance ASC
+					)
+SELECT team, park,_name attendance/games AS attendance_per_games
+FROM low_avg_games
+INNER JOIN parks
+USING(park)
+ORDER BY attendance_per_games ASC
+LIMIT 5;
+	
+
+
+--emily answer
+WITH top_5_attendance AS
+(SELECT teams.name, homegames.team, park_name, homegames.attendance, games, homegames.attendance/games AS attendance_per_game, 'TOP 5' AS ranking
+FROM homegames
+FULL JOIN parks
+USING (park)
+FULL JOIN teams
+ON parks.park = teams.park
+WHERE year = 2016 
+AND games >= 10
+ORDER BY homegames.attendance/games DESC
+LIMIT 5), 
+
+bottom_5_attendance AS
+(SELECT teams.name, homegames.team, park_name, homegames.attendance, games, homegames.attendance/games AS attendance_per_game, 'BOTTOM 5'AS ranking
+FROM homegames
+FULL JOIN parks
+USING (park)
+FULL JOIN teams
+ON parks.park = teams.park
+WHERE year = 2016 
+AND games >= 10
+ORDER BY homegames.attendance/games
+LIMIT 5)
+
+SELECT *
+FROM top_5_attendance
+UNION ALL
+SELECT *
+FROM bottom_5_attendance
+
+
+
+--Q9.)Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+WITH NL_TSN AS (
+				SELECT playerid, awardid, yearid,lgid AS NL
+				FROM awardsmanagers
+				WHERE awardid ILIKE '%TSN%'
+				AND lgid = 'NL'
+				),
+AL_TSN AS (
+			SELECT playerid, awardid, yearid,lgid AS AL
+				FROM awardsmanagers
+				WHERE awardid ILIKE '%TSN%'
+				AND lgid = 'AL'
+			),
+manager_name AS (
+					SELECT playerid, concat(namefirst,' ',namelast) AS manager_name
+					FROM people
+			),
+
+team_name AS (
+				SELECT playerid, teamid, name AS team_name
+				FROM appearances
+				LEFT JOIN teams
+				USING (teamid)
+				)
+SELECT DISTINCT(playerid), manager_name, team_name, NL, AL
+FROM awardsmanagers
+INNER JOIN NL_TSN
+USING(playerid)
+INNER JOIN AL_TSN
+USING(playerid)
+INNER JOIN manager_name
+USING(playerid)
+INNER JOIN team_name
+USING(playerid)
+
+
+--Dibran answer
+WITH both_league_winners AS (
+	SELECT playerid, count(DISTINCT lgid)
+	FROM awardsmanagers
+	WHERE awardid = 'TSN Manager of the Year'
+		AND lgid IN ('AL', 'NL')
+	GROUP BY playerid
+	HAVING COUNT(DISTINCT lgid)=2
+		)
+SELECT namefirst ||' '||namelast AS full_name,
+	yearid,
+	lgid,
+	name
+FROM people
+INNER JOIN both_league_winners
+USING(playerid)
+INNER JOIN awardsmanagers
+USING(playerid)
+INNER JOIN managers
+USING(playerid,yearid,lgid)
+INNER JOIN teams
+USING (teamid,yearid,lgid)
+WHERE awardid = 'TSN Manager of the Year'
+
+
+--Q10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
