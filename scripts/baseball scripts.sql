@@ -127,6 +127,7 @@ FROM teams
 WHERE yearid >= 1970
 AND wswin = 'N'
 ORDER BY w DESC
+LIMIT 1;
 --From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? 116 wins, Seattle Mariners
 
 SELECT name, yearid, w AS wins, wswin AS world_series_win
@@ -144,10 +145,51 @@ AND wswin = 'Y'
 ORDER BY w;
 --What is the smallest number of wins for a team that did win the world series? not including 1981: 83 wins, Cardinals in 2006
 
-SELECT name --MAX(w) AS max_wins, wswin AS world_series_win, yearid
+--first approach: 
+-- WITH yearly_wins AS ( SELECT name, w, wswin AS world_series_win, yearid
+-- 					FROM teams
+-- 					WHERE yearid >= 1970
+-- 					GROUP BY yearid, name, wswin, w
+-- 					ORDER BY yearid, w DESC )
+-- SELECT name, MAX(w), yearid, world_series_win 
+-- -- 	(CASE WHEN world_series_win = 'Y' AND THEN 1
+-- -- 		  ELSE 0 END) AS ws_win_count
+-- FROM yearly_wins
+-- --WHERE world_series_win = 'Y'
+-- GROUP BY yearid, name, world_series_win
+-- ORDER BY yearid, MAX(w) DESC
+
+
+
+
+WITH yearly_wins AS ( SELECT yearid, MAX (w) AS w
+						FROM teams
+						WHERE yearid >= 1970
+						GROUP BY yearid
+						ORDER BY yearid)
+SELECT name, w, yearid, wswin, 
+	(CASE WHEN wswin = 'Y' THEN 1
+	 ELSE 0 END) AS count_wswin
+	 
+-- 	(SELECT COUNT(wswin)
+-- 	FROM teams
+-- 	WHERE wswin = 'Y')
+FROM yearly_wins
+INNER JOIN teams
+USING (yearid, w)
+--GROUP BY yearid, w, name, wswin
+ORDER BY yearid, w DESC
+
+
+--max wins by year
+SELECT name, w AS wins, yearid, wswin
 FROM teams
-WHERE yearid >= 1970
---AND wswin = 'Y'
-GROUP BY yearid --name, wswin
-ORDER BY yearid
---going to have to do a subquery to figure out max wins for each year
+WHERE yearid = 1970
+--AND wswin = 'N'
+GROUP BY yearid, name, w, wswin
+ORDER BY wins DESC
+LIMIT 1;
+
+--8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
+
+
