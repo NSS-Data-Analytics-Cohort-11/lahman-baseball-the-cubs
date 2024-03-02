@@ -167,10 +167,17 @@ WITH yearly_wins AS ( SELECT yearid, MAX (w) AS w
 						FROM teams
 						WHERE yearid >= 1970
 						GROUP BY yearid
-						ORDER BY yearid)
-SELECT name, w, yearid, wswin, 
-	(CASE WHEN wswin = 'Y' THEN 1
-	 ELSE 0 END) AS count_wswin
+						ORDER BY yearid),
+most_win_teams AS (SELECT name, yearid, wswin 
+					FROM teams
+				   	INNER JOIN yearly_wins
+				   USING (yearid, w)
+				   
+SELECT
+	(SELECT COUNT *
+	
+	--(CASE WHEN wswin = 'Y' THEN 1
+	-- ELSE 0 END) AS count_wswin
 	 
 -- 	(SELECT COUNT(wswin)
 -- 	FROM teams
@@ -200,10 +207,10 @@ LIMIT 1;
 WITH top_5_attendance AS
 (SELECT teams.name, homegames.team, park_name, homegames.attendance, games, homegames.attendance/games AS attendance_per_game, 'TOP 5' AS ranking
 FROM homegames
-FULL JOIN parks
+INNER JOIN parks
 USING (park)
-FULL JOIN teams
-ON parks.park = teams.park
+INNER JOIN teams
+ON team= teamid AND year = yearid
 WHERE year = 2016 
 AND games >= 10
 ORDER BY homegames.attendance/games DESC
@@ -212,10 +219,10 @@ LIMIT 5),
 bottom_5_attendance AS
 (SELECT teams.name, homegames.team, park_name, homegames.attendance, games, homegames.attendance/games AS attendance_per_game, 'BOTTOM 5'AS ranking
 FROM homegames
-FULL JOIN parks
+INNER JOIN parks
 USING (park)
-FULL JOIN teams
-ON parks.park = teams.park
+INNER JOIN teams
+ON team= teamid AND year = yearid
 WHERE year = 2016 
 AND games >= 10
 ORDER BY homegames.attendance/games
@@ -228,31 +235,37 @@ SELECT *
 FROM bottom_5_attendance
 
 --question 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
-WITH NL_winners AS
-(SELECT playerid, awardid, lgid, yearid
-FROM awardsmanagers
-WHERE awardid = 'TSN Manager of the Year' AND lgid = 'NL'
-GROUP BY playerid, awardid, lgid, yearid
-ORDER BY playerid), 
 
-AL_winners AS
-(SELECT playerid, awardid, lgid, yearid
-FROM awardsmanagers
-WHERE awardid = 'TSN Manager of the Year' AND lgid = 'AL'
-GROUP BY playerid, awardid, lgid, yearid
-ORDER BY playerid)
+	 --answer: 
 
-SELECT NL_winners.playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast) AS manager_name, teams.name, yearid
-FROM NL_winners
-INNER JOIN AL_winners
-USING (playerid)
-INNER JOIN people
-USING (playerid)
-INNER JOIN appearances
-USING (playerid)
-INNER JOIN teams
-USING (teamid)
-GROUP BY playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast), teams.name, yearid
+	 
+	 
+--trying to pull in team name
+-- WITH NL_winners AS
+-- (SELECT playerid, awardid, lgid, yearid
+-- FROM awardsmanagers
+-- WHERE awardid = 'TSN Manager of the Year' AND lgid = 'NL'
+-- GROUP BY playerid, awardid, lgid, yearid
+-- ORDER BY playerid), 
+
+-- AL_winners AS
+-- (SELECT playerid, awardid, lgid, yearid
+-- FROM awardsmanagers
+-- WHERE awardid = 'TSN Manager of the Year' AND lgid = 'AL'
+-- GROUP BY playerid, awardid, lgid, yearid
+-- ORDER BY playerid)
+
+-- SELECT NL_winners.playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast) AS manager_name, teams.name, NL_winners.yearid, AL_winners.yearid
+-- FROM NL_winners
+-- INNER JOIN AL_winners
+-- USING (playerid)
+-- INNER JOIN people
+-- USING (playerid)
+-- INNER JOIN appearances
+-- USING (playerid)
+-- INNER JOIN teams
+-- USING (teamid)
+-- GROUP BY playerid, NL_winners.awardid, NL_winners.lgid, AL_winners.lgid, CONCAT (namefirst, ' ', namelast), teams.name, NL_winners.yearid, AL_winners.yearid
 
 --fixing earlier errors
 WITH NL_winners AS
@@ -276,7 +289,40 @@ USING (playerid)
 INNER JOIN people
 USING (playerid)
 
---finding team names associated w/those managers
+	 --Dibran's answer: 
+WITH both_league_winners AS (
+	SELECT
+		playerid--, count(DISTINCT lgid)
+	FROM awardsmanagers
+	WHERE awardid = 'TSN Manager of the Year'
+		AND lgid IN ('AL', 'NL')
+	GROUP BY playerid
+	--order by COUNT(DISTINCT lgid) desc
+	HAVING COUNT(DISTINCT lgid) = 2
+	)
+SELECT
+	namefirst || ' ' || namelast AS full_name,
+	yearid,
+	lgid,
+	name
+FROM people
+INNER JOIN both_league_winners
+USING(playerid)
+INNER JOIN awardsmanagers
+USING(playerid)
+INNER JOIN managers
+USING(playerid, yearid, lgid)
+INNER JOIN teams
+USING(teamid, yearid,lgid)
+WHERE awardid = 'TSN Manager of the Year'
+ORDER BY full_name, yearid;	 
+	 
+	 
+	 
+	 
+	 
+	 
+--finding team names associated w/those managers; need to join on multiple columns
 SELECT people.playerid, teams.teamid, teams.name, teams.yearid
 FROM people
 INNER JOIN appearances
@@ -287,6 +333,8 @@ WHERE playerid IN ('johnsda02', 'leylaji99')
 GROUP BY playerid, teams.teamid, teams.name, teams.yearid
 ORDER BY yearid
 
+	 
 
-SELECT *
-from people
+--10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+
+	 
