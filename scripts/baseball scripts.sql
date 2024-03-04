@@ -338,3 +338,32 @@ ORDER BY yearid
 --10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
 	 
+--for presentation:
+SELECT *
+FROM teams
+WHERE name LIKE 'Kansas City %'
+	 
+SELECT *
+FROM schools
+	 WHERE schoolname LIKE '%Kansas%' OR schoolname LIKE 'Truman%'
+	 
+SELECT *
+FROM collegeplaying
+	 WHERE schoolid IN ('kansas', 'kansasst', 'kskccco', 'trumanst', 'umkc')
+--79 rows
+	 
+WITH truman_players AS (
+	 SELECT DISTINCT playerid
+FROM collegeplaying
+WHERE schoolid ='trumanst') --4 Truman players
+
+SELECT *
+FROM people
+INNER JOIN truman_players
+USING (playerid)
+
+	 --further investigation: what teams did they play for? salaries? stats (batting, fielding, etc)? awards? all star?
+
+	 
+	 
+	 
