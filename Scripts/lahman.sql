@@ -481,3 +481,146 @@ WHERE h.career_highest_2016 IS NOT NULL
 	AND DATE_PART('year', p.debut::DATE) <= 2007
 ORDER BY num_hr DESC;
 --Derek thank you 
+
+
+
+-----------------SOLO WORK----------------------
+
+WITH batting AS (
+	SELECT playerid, hr, rbi, sb
+	FROM batting
+				),			
+fielding AS (
+	SELECT playerid, pos, po 
+	FROM fielding
+	             ),
+pitching AS (
+	SELECT playerid, sho, so 
+	FROM pitching
+	             )
+				 
+SELECT DISTINCT(hof.playerid), hof.yearid, COUNT(b.hr) AS homerun, COUNT(b.rbi) AS rbi, COUNT(b.sb) AS stolen_bases,
+									  COUNT(f.po) AS putouts,
+									  COUNT(p.sho) AS sho, COUNT(p.so) AS so
+FROM halloffame AS hof
+FULL JOIN batting AS b
+ON hof.playerid = b.playerid
+FULL JOIN fielding AS f 
+ON hof.playerid = f.playerid 
+FULL JOIN pitching AS p
+ON hof.playerid = p.playerid
+WHERE inducted = 'Y' AND category = 'Player'
+GROUP BY DISTINCT(hof.playerid), hof.yearid
+ORDER BY yearid ASC
+-----------------------
+WITH left_hand AS (
+	SELECT COUNT(throws) AS throws_l
+FROM 
+(SELECT playerid, CONCAT(namefirst, '', namelast) AS full_name, throws
+FROM people)
+WHERE throws = 'L'),
+
+right_hand AS (
+	SELECT COUNT(throws) AS throws_r
+FROM 
+(SELECT playerid, CONCAT(namefirst, '', namelast) AS full_name, throws
+FROM people)
+WHERE throws = 'R')
+
+SELECT ROUND((3654 * 1.0/ 18125 * 1.0) * 100,2) AS perc_lefty
+FROM left_hand
+FULL JOIN right_hand
+ON left_hand.throws_l = right_hand.throws_r
+LIMIT 1
+----Left percent ^^ 20%
+
+SELECT DISTINCT(playerid), SUM(w) AS win, SUM(l) AS lose,SUM(so) AS strike_out, ROUND(AVG(era::numeric::int),2) AS earn_run_avg
+FROM(WITH lefty AS (SELECT *
+FROM 
+(SELECT playerid, CONCAT(namefirst, ' ', namelast) AS full_name, throws
+FROM people)
+WHERE throws = 'L')
+
+SELECT *
+FROM pitching
+INNER JOIN lefty
+USING(playerid))
+GROUP BY DISTINCT(playerid)
+ORDER BY earn_run_avg ASC
+-----Lefty stats
+
+SELECT DISTINCT(playerid), SUM(w) AS win, SUM(l) AS lose,SUM(so) AS strike_out, ROUND(AVG(era::numeric::int),2) AS earn_run_avg
+FROM(WITH lefty AS (SELECT *
+FROM 
+(SELECT playerid, CONCAT(namefirst, ' ', namelast) AS full_name, throws
+FROM people)
+WHERE throws = 'R')
+
+-- 	 SELECT * 
+-- 	 FROM pitching
+-- 	 WHERE playerid = '"fishefr01"'
+	 
+SELECT *
+FROM pitching
+INNER JOIN lefty
+USING(playerid))
+GROUP BY DISTINCT(playerid)
+ORDER BY strike_out DESC
+-----Righty Stats
+
+
+SELECT halloffame.playerid AS playerid, yearid, people.throws
+FROM halloffame
+INNER JOIN people
+USING(playerid)
+WHERE category = 'Player' AND inducted = 'Y'
+						  AND throws = 'L'
+----Hall of fame leftys
+
+WITH hof_lefty AS (SELECT halloffame.playerid AS playerid, yearid, people.throws
+FROM halloffame
+INNER JOIN people
+USING(playerid)
+WHERE category = 'Player' AND inducted = 'Y'
+						  AND throws = 'L')
+
+SELECT pitching.playerid, hof_lefty.yearid, hof_lefty.throws 
+FROM pitching
+INNER JOIN hof_lefty
+ON pitching.playerid = hof_lefty.playerid
+GROUP BY pitching.playerid, hof_lefty.yearid, hof_lefty.throws 
+
+SELECT ap.playerid, awardid, throws
+FROM awardsplayers AS ap
+INNER JOIN people
+ON ap.playerid = people.playerid
+WHERE awardid = 'Cy Young Award' AND throws = 'L'
+
+SELECT ap.playerid, awardid, throws
+FROM awardsplayers AS ap
+INNER JOIN people
+ON ap.playerid = people.playerid
+WHERE awardid = 'Cy Young Award' AND throws = 'R'
+
+SELECT ROUND((37 * 1.0/ 120) * 100, 2) AS cy_left_perc
+---31%
+
+SELECT * 
+FROM awardsplayers
+WHERE awardid = 'Cy Young Award'
+
+SELECT * 
+FROM pitching
+WHERE playerid = 'ruthba01'
+
+
+
+
+
+
+
+
+
+
+
+
