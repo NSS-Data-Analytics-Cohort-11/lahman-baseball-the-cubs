@@ -399,10 +399,6 @@ USING(playerid)
 
 
 
-
-
-
-
 --Average height of a pitcher
 SELECT
 	CASE
