@@ -337,6 +337,7 @@ ORDER BY yearid
 
 --10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
+
 	 
 --for individual presentation:
 SELECT *
@@ -410,7 +411,33 @@ USING (playerid)
 WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 ORDER BY playerid, yearid
 
+--position played (fielding)
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, pos AS position
+FROM fielding
+INNER JOIN people
+USING (playerid)
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+GROUP BY CONCAT(namefirst, ' ', namelast), pos 
+
+	 --Al played in WS in 1986
 SELECT *
-FROM pitching
+FROM fieldingpost
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+	 
+	 
+--teams table info for Truman players; Bruce's team won WS in 1986
+WITH truman_players AS (SELECT playerid, yearid, teamid
+FROM fielding
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01') )
+	 
+SELECT playerid, yearid, name AS team_name, rank, w AS wins, l AS losses, lgwin AS league_championship, wswin AS world_series_win
+FROM teams
+INNER JOIN truman_players
+USING (yearid, teamid)
+ORDER BY playerid, yearid
+
+	 --Bruce & Al: Rookie of the Year
+SELECT *
+FROM awardsshareplayers
 WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 	 
