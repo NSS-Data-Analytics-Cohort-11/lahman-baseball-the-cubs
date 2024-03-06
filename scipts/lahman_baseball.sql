@@ -309,3 +309,108 @@ WHERE awardid = 'TSN Manager of the Year'
 
 
 --Q10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+
+
+
+
+--Presentation
+Select *
+FROM parks
+WHERE state = 'MI'
+
+--------
+
+WITH det_tigers AS (
+					SELECT *
+					FROM teams
+					WHERE name ILIKE '%tiger%'
+					),
+				
+players AS (
+					SELECT namefirst || ' '||namelast AS player_name
+					FROM people
+				)
+SELECT teamid, yearid, player_name
+FROM appearances
+INNER JOIN det_tigers
+USING(teamid, yearid)
+INNER JOIN players
+ON appearances.playerid = people.playerid
+	
+	
+--Detroit players
+SELECT namefirst|| ' '||namelast AS player_name, yearid, name AS team_name
+FROM people
+INNER JOIN appearances
+USING(playerid)
+INNER JOIN teams
+USING(yearid)
+WHERE name ILIKE '%Tiger%'
+	
+
+--players who played on DET Tigers and Went to Michigan State
+WITH detroit_players AS (SELECT namefirst|| ' '||namelast AS player_name, yearid, name AS mlb_team_name, playerid
+						FROM people
+						INNER JOIN appearances
+						USING(playerid)
+						INNER JOIN teams
+						USING(yearid)
+						WHERE name ILIKE '%Tiger%')
+SELECT DISTINCT(player_name), mlb_team_name, schoolname, inducted, category
+FROM collegeplaying
+INNER JOIN detroit_players
+USING(playerid)
+INNER JOIN schools
+USING(schoolid)
+INNER JOIN halloffame
+USING(playerid)
+WHERE schoolname ILIKE '%Michigan State Univ%'
+
+
+
+WITH msu_spartans AS (
+			SELECT DISTINCT(playerid), schoolname
+			FROM collegeplaying
+			INNER JOIN schools
+			USING(schoolid)
+			WHERE schoolname ILIKE '%Michigan State Univ%'
+			)
+SELECT DISTINCT(concat(namefirst,' ',namelast)) AS player_name, schoolname, inducted
+FROM people
+INNER JOIN msu_spartans
+USING(playerid)
+INNER JOIN halloffame
+USING(playerid)
+
+---Grandpa Anderson
+WITH walter_anderson AS (
+							select namefirst|| ' '||namelast AS player_name, concat(birthmonth, '/',birthday,'/',birthyear) AS birthday, birthstate, birthcity, playerid, throws, debut, finalgame, namegiven, schoolname
+							FROM people
+							INNER JOIN collegeplaying
+							USING(playerid)
+							INNER JOIN schools
+							ON collegeplaying.schoolid = schools.schoolid
+							WHERE namefirst|| ' '||namelast ILIKE '%Walter Ander%'
+						)
+SELECT player_name, birthday, birthstate, birthcity, schoolname, teamid, yearid, throws, SO AS strikeouts, g AS games, era
+FROM pitching
+INNER JOIN walter_anderson
+USING(playerid)
+
+
+
+
+
+
+
+--Average height of a pitcher
+SELECT
+	CASE
+		WHEN pos = 'OF' THEN 'Outfield'
+		WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+		WHEN pos IN ('P', 'C') THEN 'Battery'
+	END AS position_group,
+	SUM(po) AS total_po
+FROM fielding
+GROUP BY position_group;
+
