@@ -338,7 +338,7 @@ ORDER BY yearid
 --10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
 	 
---for presentation:
+--for individual presentation:
 SELECT *
 FROM teams
 WHERE name LIKE 'Kansas City %'
@@ -352,18 +352,65 @@ FROM collegeplaying
 	 WHERE schoolid IN ('kansas', 'kansasst', 'kskccco', 'trumanst', 'umkc')
 --79 rows
 	 
+--basic info about Truman players from people table: 	 
 WITH truman_players AS (
 	 SELECT DISTINCT playerid
 FROM collegeplaying
 WHERE schoolid ='trumanst') --4 Truman players
 
-SELECT *
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date) AS birthdate, CONCAT(birthcity, ',', birthstate) AS birthplace, deathyear, weight, height, bats, throws, CAST(debut AS date), AGE(CAST(debut AS date), CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date)) AS age_at_debut, CAST(finalgame AS date), AGE(CAST(finalgame AS date), CAST(debut AS date)) AS career_length--, salaries.*
 FROM people
 INNER JOIN truman_players
 USING (playerid)
-
+-- FULL JOIN salaries
+-- USING (playerid)
 	 --further investigation: what teams did they play for? salaries? stats (batting, fielding, etc)? awards? all star?
 
+--salaries for Bruce (1985) & Al (1985, 86, 88); nothing for Guy or Dave	 
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, yearid, teamid, salary::numeric::money
+FROM salaries
+INNER JOIN people
+USING (playerid)
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+ORDER BY playerid
+
+--establishes that salary data starts with 1985:
+-- SELECT DISTINCT yearid
+-- FROM salaries
+-- ORDER BY yearid	
+
+-- appearances
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, appearances.yearid, name, g_all AS total_games, g_batting, g_defense, g_p AS pitcher, g_of AS outfielder, g_ph AS pinch_hitter, g_pr AS pinch_runner
+FROM appearances
+INNER JOIN teams
+USING (teamid, yearid)
+INNER JOIN people
+USING (playerid)	 
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+ORDER BY CONCAT(namefirst, ' ', namelast), yearid
+
+-- SELECT *
+-- FROM appearances	 
+-- WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 	 
 	 
+--batting stats
+SELECT  CONCAT(namefirst, ' ', namelast) AS player_name, yearid, teamid, g AS games, ab AS at_bats, r AS runs, h AS hits, h2b AS doubles, h3b AS triples, rbi, sb AS stolen_bases, cs AS caught_stealing, bb AS base_on_balls, so AS strikeouts, ibb AS intentional_walks, hbp AS hit_by_pitch, sh AS sacrifice_hits, sf AS sacrifice_flies, gidp AS grounded_into_double_plays
+FROM batting
+INNER JOIN people
+USING (playerid)	 
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+ORDER BY playerid, yearid
+ 
+--pitching stats (Guy did not pitch)
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, yearid, teamid, gs AS games_started, sho AS shutouts, h AS hits, hr AS homeruns, bb AS walks, so AS strikeouts, wp AS wild_pitches, hbp AS batters_hit_by_pitch
+FROM pitching
+INNER JOIN people
+USING (playerid)	 
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+ORDER BY playerid, yearid
+
+SELECT *
+FROM pitching
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 	 
