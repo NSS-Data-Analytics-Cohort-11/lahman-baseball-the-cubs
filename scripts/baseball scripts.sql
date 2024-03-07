@@ -359,7 +359,7 @@ WITH truman_players AS (
 FROM collegeplaying
 WHERE schoolid ='trumanst') --4 Truman players
 
-SELECT CONCAT(namefirst, ' ', namelast) AS player_name, CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date) AS birthdate, CONCAT(birthcity, ',', birthstate) AS birthplace, deathyear, weight, height, bats, throws, CAST(debut AS date), AGE(CAST(debut AS date), CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date)) AS age_at_debut, CAST(finalgame AS date), AGE(CAST(finalgame AS date), CAST(debut AS date)) AS career_length--, salaries.*
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date) AS birthdate, CONCAT(birthcity, ', ', birthstate) AS birthplace, weight, height, bats, throws, CAST(debut AS date), AGE(CAST(debut AS date), CAST(CONCAT(birthmonth, '/', birthday, '/', birthyear) AS date)) AS age_at_debut, CAST(finalgame AS date), AGE(CAST(finalgame AS date), CAST(debut AS date)) AS career_length--, salaries.*
 FROM people
 INNER JOIN truman_players
 USING (playerid)
@@ -380,7 +380,7 @@ ORDER BY playerid
 -- FROM salaries
 -- ORDER BY yearid	
 
--- appearances
+-- appearances info
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name, appearances.yearid, name, g_all AS total_games, g_batting, g_defense, g_p AS pitcher, g_of AS outfielder, g_ph AS pinch_hitter, g_pr AS pinch_runner
 FROM appearances
 INNER JOIN teams
@@ -390,6 +390,16 @@ USING (playerid)
 WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 ORDER BY CONCAT(namefirst, ' ', namelast), yearid
 
+	 -- teams list
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, appearances.yearid, name 
+FROM appearances
+INNER JOIN teams
+USING (teamid, yearid)
+INNER JOIN people
+USING (playerid)	 
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+ORDER BY CONCAT(namefirst, ' ', namelast), yearid
+	 
 -- SELECT *
 -- FROM appearances	 
 -- WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
@@ -411,6 +421,18 @@ USING (playerid)
 WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 ORDER BY playerid, yearid
 
+SELECT *
+FROM pitching
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')	 
+	 
+--sum of pitching stats
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name, SUM (g) AS total_games, SUM (gs) AS total_games_started, SUM (sho) AS total_shutouts, SUM (so) AS total_strikeouts, SUM (wp) AS total_wild_pitches, SUM (hbp) AS total_batters_hit_by_pitch
+FROM pitching
+INNER JOIN people
+USING (playerid)	 
+WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
+GROUP BY CONCAT(namefirst, ' ', namelast)	 
+	 
 --position played (fielding)
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name, pos AS position
 FROM fielding
@@ -421,7 +443,7 @@ GROUP BY CONCAT(namefirst, ' ', namelast), pos
 
 	 --Al played in WS in 1986
 SELECT *
-FROM fieldingpost
+FROM pitchingpost
 WHERE playerid IN ('berenbr01', 'curtrgu01', 'nippeal01','wehrmda01')
 	 
 	 
