@@ -375,7 +375,53 @@ where yearid BETWEEN 1985 AND 1993
 GROUP BY region,G)
 SELECT *
 FROM pre_roid
-Union all
+Union 
 SELECT *
 From roid_era
+
+---
+WITH pre_roid
+     AS (SELECT Sum(teams.hr) AS total_hrs,
+                g,
+                CASE
+                  WHEN franchid IN ( 'ANA', 'SFG', 'SEA', 'SDP',
+                                     'OAK', 'LAD' ) THEN 'West Coast'
+                  WHEN franchid IN ( 'CHC', 'CHW', 'CIN', 'CLE',
+                                     'KCR', 'MIL', 'MIN', 'STL', 'DET' ) THEN
+                  'Midwest'
+                  WHEN franchid IN ( 'ARI', 'HOU', 'TEX', 'COL' ) THEN
+                  'Southwest'
+                  WHEN franchid IN ( 'ATL', 'WSN', 'FLA', 'TBD', 'BAL' ) THEN
+                  'Southeast'
+                  WHEN franchid IN ( 'PIT', 'PHI', 'NYY', 'NYM',
+                                     'TOR', 'BOS' ) THEN 'Northeast'
+                END           AS region
+         FROM   teams
+         WHERE  yearid BETWEEN 1985 AND 1993
+         GROUP  BY region,
+                   g),
+     roid_era
+     AS (SELECT Sum(teams.hr) AS total_hrs,
+                g,
+                CASE
+                  WHEN franchid IN ( 'ANA', 'SFG', 'SEA', 'SDP',
+                                     'OAK', 'LAD' ) THEN 'West Coast'
+                  WHEN franchid IN ( 'CHC', 'CHW', 'CIN', 'CLE',
+                                     'KCR', 'MIL', 'MIN', 'STL', 'DET' ) THEN
+                  'Midwest'
+                  WHEN franchid IN ( 'ARI', 'HOU', 'TEX', 'COL' ) THEN
+                  'Southwest'
+                  WHEN franchid IN ( 'ATL', 'WSN', 'FLA', 'TBD', 'BAL' ) THEN
+                  'Southeast'
+                  WHEN franchid IN ( 'PIT', 'PHI', 'NYY', 'NYM',
+                                     'TOR', 'BOS' ) THEN 'Northeast'
+                END           AS region
+         FROM   teams
+         WHERE  yearid BETWEEN 1985 AND 1993
+         GROUP  BY region,
+                   g) SELECT *
+FROM   pre_roid
+UNION
+SELECT *
+FROM   roid_era 
 
